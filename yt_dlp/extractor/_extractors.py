@@ -599,6 +599,9 @@ from .facebook import (
     FacebookRedirectURLIE,
     FacebookReelIE,
 )
+from .fakehub import (
+    FakeHubIE,
+)
 from .fancode import (
     FancodeLiveIE,
     FancodeVodIE,
