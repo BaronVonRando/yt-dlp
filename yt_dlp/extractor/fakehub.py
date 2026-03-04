@@ -54,8 +54,8 @@ class FakeHubIE(InfoExtractor):
 
         cookies = self._get_cookies(url)
 
-        self.to_screen(f'Cookie jar type: {type(cookies)}')
-        self.to_screen(f'Cookie jar contents: {list(cookies)}')
+        #self.to_screen(f'Cookie jar type: {type(cookies)}')
+        #self.to_screen(f'Cookie jar contents: {list(cookies)}')
 
         access_token = cookies.get('access_token_ma').value
         instance_token = cookies.get('instance_token').value
@@ -73,10 +73,10 @@ class FakeHubIE(InfoExtractor):
         }
 
         # Print curl equivalent
-        curl_cmd = f"curl -v '{api_url}'"
-        for k, v in headers.items():
-            curl_cmd += f" \\\n  -H '{k}: {v}'"
-        self.to_screen(f'CURL EQUIVALENT:\n{curl_cmd}')
+        #curl_cmd = f"curl -v '{api_url}'"
+        #for k, v in headers.items():
+        #    curl_cmd += f" \\\n  -H '{k}: {v}'"
+        #self.to_screen(f'CURL EQUIVALENT:\n{curl_cmd}')
 
         data = self._download_json(api_url, scene_id, headers=headers)
 
