@@ -1,4 +1,3 @@
-from .amp import AMPIE
 from .common import InfoExtractor
 from ..utils import (
     parse_duration,
@@ -14,7 +13,7 @@ class FakeHubIE(InfoExtractor):
     IE_NAME = 'fakehub'
     _VALID_URL = r'https?://(?:[a-z0-9-]+\.)?fakehub\.com/scene/(?P<id>\d+)'
 
-    _TESTS = [{
+    """ _TESTS = [{
         # Youtube Embeds
         'url': 'https://abcnews.go.com/Entertainment/peter-billingsley-child-actor-christmas-story-hollywood-power/story?id=51286501',
         'info_dict': {
@@ -47,51 +46,70 @@ class FakeHubIE(InfoExtractor):
         # inline.type == 'video'
         'url': 'http://abcnews.go.com/Technology/exclusive-apple-ceo-tim-cook-iphone-cracking-software/story?id=37173343',
         'only_matching': True,
-    }]
+    }] """
 
     def _real_extract(self, url):
-        story_id = self._match_id(url)
-        webpage = self._download_webpage(url, story_id)
-        story = self._parse_json(self._search_regex(
-            r"window\['__abcnews__'\]\s*=\s*({.+?});",
-            webpage, 'data'), story_id)['page']['content']['story']['everscroll'][0]
-        article_contents = story.get('articleContents') or {}
+        scene_id = self._match_id(url)
+        #webpage = self._download_webpage(url, scene_id)  # don't even need it!
 
-        def entries():
-            featured_video = story.get('featuredVideo') or {}
-            feed = try_get(featured_video, lambda x: x['video']['feed'])
-            if feed:
-                yield {
-                    '_type': 'url',
-                    'id': featured_video.get('id'),
-                    'title': featured_video.get('name'),
-                    'url': feed,
-                    'thumbnail': featured_video.get('images'),
-                    'description': featured_video.get('description'),
-                    'timestamp': parse_iso8601(featured_video.get('uploadDate')),
-                    'duration': parse_duration(featured_video.get('duration')),
-                    'ie_key': AbcNewsVideoIE.ie_key(),
-                }
+        cookies = self._get_cookies(url)
 
-            for inline in (article_contents.get('inlines') or []):
-                inline_type = inline.get('type')
-                if inline_type == 'iframe':
-                    iframe_url = try_get(inline, lambda x: x['attrs']['src'])
-                    if iframe_url:
-                        yield self.url_result(iframe_url)
-                elif inline_type == 'video':
-                    video_id = inline.get('id')
-                    if video_id:
-                        yield {
-                            '_type': 'url',
-                            'id': video_id,
-                            'url': 'http://abcnews.go.com/video/embed?id=' + video_id,
-                            'thumbnail': inline.get('imgSrc') or inline.get('imgDefault'),
-                            'description': inline.get('description'),
-                            'duration': parse_duration(inline.get('duration')),
-                            'ie_key': AbcNewsVideoIE.ie_key(),
-                        }
+        self.to_screen(f'Cookie jar type: {type(cookies)}')
+        self.to_screen(f'Cookie jar contents: {list(cookies)}')
 
-        return self.playlist_result(
-            entries(), story_id, article_contents.get('headline'),
-            article_contents.get('subHead'))
+        access_token = cookies.get('access_token_ma').value
+        instance_token = cookies.get('instance_token').value
+        
+        if not access_token:
+            self.raise_login_required('This site requires authentication. E.g. use --cookies-from-browser vivaldi')
+
+        api_url = f'https://site-api.project1service.com/v2/releases/{scene_id}'
+        headers = {
+            'Authorization': f'{self._get_cookies(url).get("access_token_ma").value}',
+            'Instance': f'{self._get_cookies(url).get("instance_token").value}',
+            'X-App-Session-Id': f'{self._get_cookies(url).get("app_session_id").value}',
+            'Referer': url,
+            'Origin': 'https://site-ma.fakehub.com',
+        }
+
+        # Print curl equivalent
+        curl_cmd = f"curl -v '{api_url}'"
+        for k, v in headers.items():
+            curl_cmd += f" \\\n  -H '{k}: {v}'"
+        self.to_screen(f'CURL EQUIVALENT:\n{curl_cmd}')
+
+        data = self._download_json(api_url, scene_id, headers=headers)
+
+        
+        result = data['result']  # now result points to the right level
+        files = result['videos']['full']['files']
+        
+        hls_url = files[0]['urls']['view']
+
+        formats = self._extract_m3u8_formats(
+            hls_url, scene_id, ext='mp4',
+            entry_protocol='m3u8_native',
+            m3u8_id='hls',
+            headers={
+                'Authorization': access_token,
+                'Referer': url,
+                'Origin': 'https://site-ma.fakehub.com',
+            }
+        )
+
+        actors = [a['name'] for a in result.get('actors', [])]
+
+        #thumbnail
+        thumbnail = try_get(result, lambda x: x['images']['poster']['0']['xx']['urls']['default'])
+
+        return {
+            'id': scene_id,
+            'title': result['title'],
+            'description': result.get('description'),
+            'upload_date': result.get('dateReleased', '')[:10].replace('-', ''),  # '20230917'
+            'age_limit': 18,  # always 18 for adult content
+            'cast': actors,
+            'tags': [],  # maybe fill in from JSON
+            'formats': formats,
+            'thumbnail': thumbnail
+        }
