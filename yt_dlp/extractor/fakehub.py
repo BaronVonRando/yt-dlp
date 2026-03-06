@@ -1,12 +1,8 @@
-from .common import InfoExtractor
 from .common import ExtractorError
+from .common import InfoExtractor
 from ..utils import (
-    parse_duration,
-    parse_iso8601,
     try_get,
 )
-
-
 
 
 
@@ -60,7 +56,7 @@ class FakeHubIE(InfoExtractor):
 
         access_token = cookies.get('access_token_ma').value
         instance_token = cookies.get('instance_token').value
-        
+
         if not access_token:
             self.raise_login_required('This site requires authentication. E.g. use --cookies-from-browser vivaldi')
 
@@ -80,7 +76,6 @@ class FakeHubIE(InfoExtractor):
         #self.to_screen(f'CURL EQUIVALENT:\n{curl_cmd}')
 
         data = self._download_json(api_url, scene_id, headers=headers)
-
         
         result = data['result']  # now result points to the right level
 
