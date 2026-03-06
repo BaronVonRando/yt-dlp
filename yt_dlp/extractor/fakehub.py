@@ -1,4 +1,5 @@
 from .common import InfoExtractor
+from .common import ExtractorError
 from ..utils import (
     parse_duration,
     parse_iso8601,
@@ -82,8 +83,15 @@ class FakeHubIE(InfoExtractor):
 
         
         result = data['result']  # now result points to the right level
-        files = result['videos']['full']['files']
-        
+
+        try:
+            files = result['videos']['full']['files']
+        except KeyError:
+            raise ExtractorError(
+                'Could not find video files — are you logged in?',
+                expected=True
+            )
+
         hls_url = files[0]['urls']['view']
 
         formats = self._extract_m3u8_formats(
