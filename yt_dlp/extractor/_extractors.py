@@ -1159,6 +1159,7 @@ from .mlb import (
 )
 from .mlssoccer import MLSSoccerIE
 from .mocha import MochaVideoIE
+from .mofos import MofosIE
 from .mojevideo import MojevideoIE
 from .mojvideo import MojvideoIE
 from .monstercat import MonstercatIE
