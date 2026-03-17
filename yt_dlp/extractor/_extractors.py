@@ -599,9 +599,7 @@ from .facebook import (
     FacebookRedirectURLIE,
     FacebookReelIE,
 )
-from .fakehub import (
-    FakeHubIE,
-)
+from .fakehub import FakeHubIE
 from .fancode import (
     FancodeLiveIE,
     FancodeVodIE,
@@ -1159,7 +1157,7 @@ from .mlb import (
 )
 from .mlssoccer import MLSSoccerIE
 from .mocha import MochaVideoIE
-from .mofos import MofosIE
+from .mofos import MofosIE                                      
 from .mojevideo import MojevideoIE
 from .mojvideo import MojvideoIE
 from .monstercat import MonstercatIE

@@ -45,6 +45,31 @@ class FakeHubIE(InfoExtractor):
         'only_matching': True,
     }] """
 
+    def _select_best_format(self, files):
+        """Select best file: prefer 1080p AV1, fallback to 1080p H264, then 720p."""
+        
+        def match(fmt, codec):
+            return next(
+                (f for f in files if f.get('format') == fmt and f.get('codec') == codec),
+                None
+            )
+        
+        def match_fmt(fmt):
+            return next(
+                (f for f in files if f.get('format') == fmt),
+                None
+            )
+        
+        chosen = (
+            match('1080p', 'av1')
+            or match('1080p', 'h264')
+            or match_fmt('1080p')   # any 1080p codec as last resort
+            or match_fmt('720p')
+            or files[0]             # absolute fallback
+        )
+        
+        return chosen['urls']['view']
+
     def _real_extract(self, url):
         scene_id = self._match_id(url)
         #webpage = self._download_webpage(url, scene_id)  # don't even need it!
@@ -67,6 +92,7 @@ class FakeHubIE(InfoExtractor):
             'X-App-Session-Id': f'{self._get_cookies(url).get("app_session_id").value}',
             'Referer': url,
             'Origin': 'https://site-ma.fakehub.com',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
         }
 
         # Print curl equivalent
@@ -76,10 +102,9 @@ class FakeHubIE(InfoExtractor):
         #self.to_screen(f'CURL EQUIVALENT:\n{curl_cmd}')
 
         data = self._download_json(api_url, scene_id, headers=headers)
-        
-        result = data['result']  # now result points to the right level
 
         try:
+            result = data['result']   # type: ignore
             files = result['videos']['full']['files']
         except KeyError:
             raise ExtractorError(
@@ -87,7 +112,7 @@ class FakeHubIE(InfoExtractor):
                 expected=True,
             )
 
-        hls_url = files[0]['urls']['view']
+        hls_url = self._select_best_format(files)
 
         formats = self._extract_m3u8_formats(
             hls_url, scene_id, ext='mp4',
@@ -97,8 +122,18 @@ class FakeHubIE(InfoExtractor):
                 'Authorization': access_token,
                 'Referer': url,
                 'Origin': 'https://site-ma.fakehub.com',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
             }
         )
+
+        # Propagate headers to fragment requests
+        for f in formats:
+            f.setdefault('http_headers', {}).update({
+            #    'Authorization': access_token,
+                'Referer': url,
+                'Origin': 'https://site-ma.fakehub.com',
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+            })
 
         actors = [a['name'] for a in result.get('actors', [])]
 

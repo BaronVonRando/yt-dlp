@@ -85,7 +85,7 @@ class MofosIE(InfoExtractor):
         instance_token = cookies.get('instance_token').value
 
         if not access_token:
-            self.raise_login_required('This site requires authentication. E.g. use --cookies-from-browser vivaldi')
+            self.raise_login_required('This site requires authentication. E.g. use --cookies-from-browser firefox')
 
         api_url = f'https://site-api.project1service.com/v2/releases/{scene_id}'
         headers = {
@@ -98,15 +98,15 @@ class MofosIE(InfoExtractor):
 
         # Print curl equivalent
         #curl_cmd = f"curl -v '{api_url}'"
+        #headers_cmd = ""
         #for k, v in headers.items():
-        #    curl_cmd += f" \\\n  -H '{k}: {v}'"
-        #self.to_screen(f'CURL EQUIVALENT:\n{curl_cmd}')
+        #    headers_cmd += f" \\\n  -H '{k}: {v}'"
+        #self.write_debug(f'[debug] CURL EQUIVALENT:\n{curl_cmd} {headers_cmd}')
 
         data = self._download_json(api_url, scene_id, headers=headers)
-        
-        result = data['result']  # now result points to the right level
 
         try:
+            result = data['result']   # type: ignore
             files = result['videos']['full']['files']
         except KeyError:
             raise ExtractorError(
@@ -126,6 +126,20 @@ class MofosIE(InfoExtractor):
                 'Origin': 'https://site-ma.mofos.com',
             }
         )
+
+        # Propagate headers to fragment requests
+        for f in formats:
+            f.setdefault('http_headers', {}).update({
+                'Referer': url,
+                'Origin': 'https://site-ma.fakehub.com',
+            })
+
+        # Print curl equivalent
+        curl_cmd = f"curl -v '{hls_url}'"
+        headers_cmd = ""
+        for k, v in headers.items():
+            headers_cmd += f" \\\n  -H '{k}: {v}'"
+        self.write_debug(f'[debug] CURL EQUIVALENT (HLS):\n{curl_cmd} {headers_cmd}')
 
         actors = [a['name'] for a in result.get('actors', [])]
 
