@@ -84,7 +84,7 @@ class FakeHubIE(InfoExtractor):
             instance_token = cookies.get('instance_token').value
         except AttributeError:
             raise ExtractorError(
-                'Could not find Mofos access token — are you logged in?',
+                'Could not find FakeHub access token — are you logged in?',
                 expected=True,
             )
 
