@@ -81,8 +81,14 @@ class MofosIE(InfoExtractor):
         #self.to_screen(f'Cookie jar type: {type(cookies)}')
         #self.to_screen(f'Cookie jar contents: {list(cookies)}')
 
-        access_token = cookies.get('access_token_ma').value
-        instance_token = cookies.get('instance_token').value
+        try:
+            access_token = cookies.get('access_token_ma').value
+            instance_token = cookies.get('instance_token').value
+        except AttributeError:
+            raise ExtractorError(
+                'Could not find Mofos access token — are you logged in?',
+                expected=True,
+            )
 
         if not access_token:
             self.raise_login_required('This site requires authentication. E.g. use --cookies-from-browser firefox')
