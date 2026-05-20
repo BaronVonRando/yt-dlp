@@ -6,9 +6,9 @@ from ..utils import (
 
 
 
-class MofosIE(InfoExtractor):
-    IE_NAME = 'mofos'
-    _VALID_URL = r'https?://(?:[a-z0-9-]+\.)?mofos\.com/scene/(?P<id>\d+)'
+class BrazzersIE(InfoExtractor):
+    IE_NAME = 'brazzers '
+    _VALID_URL = r'https?://(?:[a-z0-9-]+\.)?brazzers\.com/scene/(?P<id>\d+)'
 
     """ _TESTS = [{
         # Youtube Embeds
@@ -86,7 +86,7 @@ class MofosIE(InfoExtractor):
             instance_token = cookies.get('instance_token').value
         except AttributeError:
             raise ExtractorError(
-                'Could not find Mofos access token — are you logged in?',
+                'Could not find Brazzers access token — are you logged in?',
                 expected=True,
             )
 
@@ -99,7 +99,7 @@ class MofosIE(InfoExtractor):
             'Instance': f'{self._get_cookies(url).get("instance_token").value}',
             'X-App-Session-Id': f'{self._get_cookies(url).get("app_session_id").value}',
             'Referer': url,
-            'Origin': 'https://site-ma.mofos.com',
+            'Origin': 'https://site-ma.brazzers.com',
         }
 
         # Print curl equivalent
@@ -129,7 +129,7 @@ class MofosIE(InfoExtractor):
             headers={
                 'Authorization': access_token,
                 'Referer': url,
-                'Origin': 'https://site-ma.mofos.com',
+                'Origin': 'https://site-ma.brazzers.com',
             }
         )
 
@@ -137,7 +137,7 @@ class MofosIE(InfoExtractor):
         for f in formats:
             f.setdefault('http_headers', {}).update({
                 'Referer': url,
-                'Origin': 'https://site-ma.mofos.com',
+                'Origin': 'https://site-ma.brazzers.com',
             })
 
         # Print curl equivalent

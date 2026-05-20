@@ -271,6 +271,7 @@ from .brainpop import (
     BrainPOPIlIE,
     BrainPOPJrIE,
 )
+from .brazzers import BrazzersIE
 from .breitbart import BreitBartIE
 from .brightcove import (
     BrightcoveLegacyIE,
